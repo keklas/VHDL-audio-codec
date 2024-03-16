@@ -7,4 +7,3 @@ set_property PROBES.FILE {} [get_hw_devices xc7z010_1]
 set_property FULL_PROBES.FILE {} [get_hw_devices xc7z010_1]
 set_property PROGRAM.FILE $outfile [get_hw_devices xc7z010_1]
 program_hw_devices [get_hw_devices xc7z010_1]
-

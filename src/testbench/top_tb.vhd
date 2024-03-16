@@ -2,66 +2,52 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity top_tb is
-end top_tb;
+end entity;
 
-architecture arch of top_tb is
+architecture Behavioral of top_tb is
 
-	component top is
-		Port (
-	        sysclk : in STD_LOGIC;
-	        btn: in std_logic_vector(3 downto 0);
-	        sw: in std_logic_vector(3 downto 0);
-	        led : out std_logic_vector(3 downto 0);
-	        led6_r: out std_logic
-	    );
-	end component;
-
-	constant cc: time := 4ns;
-
-	signal s_clk, s_led6_r: std_logic := '0';
-	signal s_btn, s_sw, s_led : std_logic_vector(3 downto 0) := (others => '0');
+signal s_btn: std_logic_vector(3 downto 0) := (others => '0');
+signal s_sw: std_logic_vector(3 downto 0) := (others => '0');
+signal s_r_led : std_logic;
+         
+signal s_sysclk, s_ac_bclk, s_ac_mclk, s_ac_muten, s_ac_pbdat, s_ac_pblrc, s_ac_recdat, s_ac_reclrc, s_ac_scl, s_ac_sda : std_logic := 'Z';   
 
 begin
-	clkGen: process
-	begin
-		s_clk <= not s_clk;
-		wait for cc;
-	end process;
 
-	uut: top port map(
-		sysclk => s_clk,
-		btn => s_btn,
-		sw => s_sw,
-		led => s_led,
-		led6_r => s_led6_r);
+uut: entity work.top port map(
+    btn => s_btn,
+    sw => s_sw,
+    led6_r => s_r_led,
+    sysclk => s_sysclk,
+    ac_bclk => s_ac_bclk,
+    ac_mclk => s_ac_mclk,
+    ac_muten => s_ac_muten,
+    ac_pbdat => s_ac_pbdat,
+    ac_pblrc => s_ac_pblrc,
+    ac_recdat => s_ac_recdat,
+    ac_reclrc => s_ac_reclrc,
+    ac_scl => s_ac_scl,
+    ac_sda => s_ac_sda
+    );
 
-	tgen: process
-	begin
-		wait for 2*cc;
-			s_sw <= "0000";
-			s_btn <= "0000";
+s_ac_scl <= 'H';
+s_ac_sda <= 'H';
 
-		wait for 2*cc;
-			s_sw <= "0001";
-			s_btn <= "0000";
+s_sw(0) <= '1';
 
-		wait for 2*cc;
-	        s_sw <= "0001";
-        	s_btn <= "0001";
+clkGen: process begin
+    s_sysclk <= '0';
+    wait for 4ns;
+    s_sysclk <= '1';
+    wait for 4ns;
+end process;
 
-		wait for 2*cc;
-	        s_sw <= "1111";
-	        s_btn <= "0000";
+rstGen: process begin
+    s_btn(0) <= '1';
+    wait for 10ns;
+    s_btn(0) <= '0';
+    wait;
+end process;
 
-		wait for 2*cc;
-	        s_sw <= "1111";
-	        s_btn <= "0001";
 
-		wait for 2*cc;
-	        s_sw <= "1111";
-	        s_btn <= "1111";
-
-		wait;
-	end process;
-
-end arch;
+end Behavioral;

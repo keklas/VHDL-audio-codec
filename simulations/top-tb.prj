@@ -1,4 +1,0 @@
-vhdl xil_defaultlib "../src/vhdl/top.vhd"
-vhdl xil_defaultlib "../src/vhdl/utils.vhd"
-vhdl xil_defaultlib "../src/testbench/top_tb.vhd"
-

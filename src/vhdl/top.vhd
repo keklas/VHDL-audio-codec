@@ -1,53 +1,95 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
--- For type conversions, we are going to use this package.
-use ieee.numeric_std.all;
-
--- here we are telling the toolchain to include our own package 'utils' to the project from library
--- called xil_defaultlib. It is the default library name used in Xilinx Vivado.
-library xil_defaultlib;
-use xil_defaultlib.utils.all;
 
 entity top is
     Port (
-        sysclk : in STD_LOGIC;
-        btn: in std_logic_vector(3 downto 0);
-        sw: in std_logic_vector(3 downto 0);
-        led : out std_logic_vector(3 downto 0);
-        led6_r: out std_logic -- overflow
-    );
+        btn         : in std_logic_vector(3 downto 0);
+        sw          : in std_logic_vector(3 downto 0);
+        led6_r      : out std_logic;
+        
+        sysclk      : in std_logic;
+        ac_bclk     : out std_logic;
+        ac_mclk     : out std_logic;
+        ac_muten    : out std_logic;
+        
+        -- HANDLE THESE VARIABLES --
+        ac_pbdat    : out std_logic;
+        ac_pblrc    : out std_logic;
+        ac_recdat   : in std_logic;  -- Unpack audio signals from this
+        ac_reclrc   : out std_logic;
+        -- HANDLE THESE VARIABLES --
+        -- Create a signal that's 16 bits long
+        -- Collect data into the signal
+        -- Perform transformations
+        -- Write back to the codec
+        
+        ac_scl      : out std_logic;
+        ac_sda      : inout std_logic
+        
+        );
 end top;
 
 architecture Behavioral of top is
 
+component i2c_configurator
+    Port (
+        sysclk  : in std_logic;
+        rst     : in std_logic;
+        scl     : out std_logic;
+        sda     : inout std_logic
+    );
+end component;
+
+signal clk_mclk : std_logic := '0'; -- SSM2603 MCLK. 12.5 MHz
+signal clk_bclk : std_logic := '0'; -- SSM2603 BCLK. 3.125 MHz
+
 begin
 
-process(sysclk)
-
-    -- define a variable. Notice the type inf_array is not a standard, but defined in utils.vhd-package
-    variable btns: inf_array(1 downto 0);
-
-    variable s: integer := 0;
-
-    -- this constant holds a maximum value what four bits can have, which is "1111" == 15
-    constant maxLeds: std_logic_vector(led'range) := (others => '1');
-
+    i2cConf: i2c_configurator port map(sysclk, btn(0), ac_scl, ac_sda);    
+    
+    -- The SSM2603 needs mclk to work. Maximum frequency is about 18 MHz.
+    -- Let's divide the 125 MHz clock by 10.
+    codecMCLKClockGen: process(sysclk)
+        constant cnt_max : integer := 10/2;
+        variable cnt : integer range 0 to cnt_max := 0; 
     begin
-        -- Take the two std_logic_vectors, convert them to integer array 
-        DualStdLogicToIntArray(btn, sw, btns);
-
-        -- Calculate the sum of integer array, and save the result to variable s
-        s := IntegerArraySum(btns);
-
-        -- convert the integer s to 4-bit long unsigned number and convert that to std_logic_vector
-        led <= std_logic_vector(to_unsigned(s, led'length));
-        
-        -- If our sum was larger than 15, turn on led6_r to indicate overflow
-        if s > to_integer(unsigned(maxLeds)) then
-            led6_r <= '1';
-        else
-            led6_r <= '0';
-        end if;    
+        if rising_edge(sysclk) then
+            if btn(0) = '1' then
+                cnt := 0;
+            end if;
+            
+            if cnt < cnt_max-1 then
+                cnt := cnt + 1;
+            else
+                cnt := 0;
+                clk_mclk <= not clk_mclk;
+            end if;
+        end if;
     end process;
+    
+    -- For 48kHz in/out the BCLK must be MCLK/4
+    codecBCLKClockGen: process(clk_mclk)
+        constant cnt_max : integer := 4/2;
+        variable cnt : integer range 0 to cnt_max := 0; 
+    begin
+        if rising_edge(clk_mclk) then
+            if btn(0) = '1' then
+                cnt := 0;
+            end if;
+            
+            if cnt < cnt_max-1 then
+                cnt := cnt + 1;
+            else
+                cnt := 0;
+                clk_bclk <= not clk_bclk;
+            end if;
+        end if;
+    end process;
+    
+    ac_mclk <= clk_mclk;
+    ac_bclk <= clk_bclk;
+    
+    ac_muten <= sw(0);   -- mute switch
+    led6_r <= not sw(0); -- red when muted
 
 end Behavioral;

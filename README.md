@@ -1,6 +1,15 @@
-# TODO List
-- [] Interface must be able to receive and transmit streaming audio data via I2C 
-- [] Your design should receive
-the audio data, do something to/with it and transmit it back to the codec
-- [] Audio processing should
-be switchable on/off or you should be able to change filter parameters etc. (for example with buttons/switches)
+# Repo usage:
+
+Run (modifications propably needed, because of different paths)
+
+`start_vivado.bat`
+
+which starts vivado in tcl-mode. Alternatively you can start vivado in tcl-mode from windows menus.
+
+In vivado, run
+
+`source tcl/all.tcl`
+
+or some other commands from tcl-folder.
+
+
