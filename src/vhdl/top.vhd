@@ -13,10 +13,10 @@ entity top is
         ac_muten    : out std_logic;
         
         -- HANDLE THESE VARIABLES --
-        ac_pbdat    : out std_logic;
-        ac_pblrc    : out std_logic;
-        ac_recdat   : in std_logic;  -- Unpack audio signals from this
-        ac_reclrc   : out std_logic;
+        ac_pbdat    : out std_logic; -- Playback data
+        ac_pblrc    : out std_logic; -- Playback channel clock, LEFT (0) or RIGHT (1)
+        ac_recdat   : in std_logic;  -- Record data, unpack audio signals from this
+        ac_reclrc   : out std_logic; -- Record channel clock
         -- HANDLE THESE VARIABLES --
         -- Create a signal that's 16 bits long
         -- Collect data into the signal
@@ -91,5 +91,8 @@ begin
     
     ac_muten <= sw(0);   -- mute switch
     led6_r <= not sw(0); -- red when muted
+
+    -- Implementation here
+
 
 end Behavioral;
