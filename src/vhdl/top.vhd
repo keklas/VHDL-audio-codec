@@ -40,54 +40,20 @@ component i2c_configurator
     );
 end component;
 
-signal clk_mclk : std_logic := '0'; -- SSM2603 MCLK. 12.5 MHz
-signal clk_bclk : std_logic := '0'; -- SSM2603 BCLK. 3.125 MHz
+component mclk_gen
+    Port (
+        sysclk      : in std_logic;
+        mclk_out    : out std_logic
+    );
+end component;
+
+signal mclk     : std_logic;
 
 begin
-
+    -- Start SSM2603 in master mode
     i2cConf: i2c_configurator port map(sysclk, btn(0), ac_scl, ac_sda);    
     
-    -- The SSM2603 needs mclk to work. Maximum frequency is about 18 MHz.
-    -- Let's divide the 125 MHz clock by 10.
-    codecMCLKClockGen: process(sysclk)
-        constant cnt_max : integer := 10/2;
-        variable cnt : integer range 0 to cnt_max := 0; 
-    begin
-        if rising_edge(sysclk) then
-            if btn(0) = '1' then
-                cnt := 0;
-            end if;
-            
-            if cnt < cnt_max-1 then
-                cnt := cnt + 1;
-            else
-                cnt := 0;
-                clk_mclk <= not clk_mclk;
-            end if;
-        end if;
-    end process;
-    
-    -- For 48kHz in/out the BCLK must be MCLK/4
-    codecBCLKClockGen: process(clk_mclk)
-        constant cnt_max : integer := 4/2;
-        variable cnt : integer range 0 to cnt_max := 0; 
-    begin
-        if rising_edge(clk_mclk) then
-            if btn(0) = '1' then
-                cnt := 0;
-            end if;
-            
-            if cnt < cnt_max-1 then
-                cnt := cnt + 1;
-            else
-                cnt := 0;
-                clk_bclk <= not clk_bclk;
-            end if;
-        end if;
-    end process;
-    
-    ac_mclk <= clk_mclk;
-    ac_bclk <= clk_bclk;
+    codecMCLKGen: mclk_gen port map(sysclk, mclk)
     
     ac_muten <= sw(0);   -- mute switch
     led6_r <= not sw(0); -- red when muted

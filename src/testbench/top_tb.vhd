@@ -37,14 +37,15 @@ s_sw(0) <= '1';
 
 clkGen: process begin
     s_sysclk <= '0';
-    wait for 4ns;
+    wait for 8ns;
     s_sysclk <= '1';
-    wait for 4ns;
+    wait for 8ns;
 end process;
 
+-- Simulate mute switch
 rstGen: process begin
     s_btn(0) <= '1';
-    wait for 10ns;
+    wait for 1000ns;
     s_btn(0) <= '0';
     wait;
 end process;
