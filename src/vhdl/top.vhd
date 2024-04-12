@@ -31,34 +31,34 @@ end top;
 
 architecture Behavioral of top is
 
-component i2c_configurator
-    Port (
-        sysclk  : in std_logic;
-        rst     : in std_logic;
-        scl     : out std_logic;
-        sda     : inout std_logic
-    );
-end component;
-
-component mclk_gen
-    Port (
-        sysclk      : in std_logic;
-        mclk_out    : out std_logic
-    );
-end component;
-
-signal mclk     : std_logic;
+    component i2c_configurator
+        Port (
+            sysclk  : in std_logic;
+            rst     : in std_logic;
+            scl     : out std_logic;
+            sda     : inout std_logic
+        );
+    end component;
+    
+    component mclk_gen
+        Port (
+            sysclk      : in std_logic;
+            mclk_out    : out std_logic
+        );
+    end component;
 
 begin
     -- Start SSM2603 in master mode
-    i2cConf: i2c_configurator port map(sysclk, btn(0), ac_scl, ac_sda);    
-    
-    codecMCLKGen: mclk_gen port map(sysclk, mclk)
-    
+    i2cConf: i2c_configurator port map(
+        sysclk=>sysclk,
+        rst=>btn(0),
+        scl=>ac_scl,
+        sda=>ac_sda);    
     ac_muten <= sw(0);   -- mute switch
     led6_r <= not sw(0); -- red when muted
 
     -- Implementation here
-
-
+    codecMCLKGen: mclk_gen port map(
+        sysclk=>sysclk,
+        mclk_out=>ac_mclk);
 end Behavioral;
