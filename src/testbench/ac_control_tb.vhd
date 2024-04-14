@@ -45,7 +45,7 @@ begin
         wait for clk_period/2;
     end process;
 
-    stim_proc: process
+    stim_proc: process -- In Vivado run the sim for 14ms so that both test-loops are finished
     begin
         wait for 100 ns;  
 
