@@ -4,34 +4,33 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity ac_control is
     Port ( clk : in STD_LOGIC;
-           enable : in STD_LOGIC; -- Enable signal for the audio processor
-           audio_in : in STD_LOGIC_VECTOR(15 downto 0); -- 16-bit input
-           amplified_audio_out : out STD_LOGIC_VECTOR(15 downto 0) -- 16-bit output
+           enable : in STD_LOGIC; -- Gain enable signal
+           audio_in : in STD_LOGIC_VECTOR(15 downto 0);
+           amplified_audio_out : out STD_LOGIC_VECTOR(15 downto 0)
          );
 end ac_control;
 
 architecture Behavioral of ac_control is
-    -- Define the gain factor
     constant gain_factor : integer := 1; -- Number of left shifts
-    signal audio_sample_signed : signed(15 downto 0);
-    signal amplified_audio_sample : signed(15 downto 0);
+    signal audio_sample : unsigned(15 downto 0);
+    signal amplified_audio_sample : unsigned(15 downto 0);
 
 begin
     process(clk)
     begin
         if rising_edge(clk) then
             if enable = '1' then
-                -- Convert input to signed format for multiplication
-                audio_sample_signed <= signed(audio_in);
+                audio_sample <= unsigned(audio_in);
                 
-                -- Amplify the audio signal
-                amplified_audio_sample <= shift_left(audio_sample_signed, gain_factor); -- Use shift_left
+                if audio_sample >= 2**(16-gain_factor) then
+                    amplified_audio_sample <= (others => '1'); -- Maximum value
+                else
+                    amplified_audio_sample <= shift_left(audio_sample, gain_factor); -- Use shift_left
+                end if;
                 
-                -- Convert back to STD_LOGIC_VECTOR for output
                 amplified_audio_out <= std_logic_vector(amplified_audio_sample);
             else
-                -- If not enabled, pass the input audio directly to output
-                amplified_audio_out <= audio_in;
+                amplified_audio_out <= audio_in; -- If enable = 0, pass the input audio directly to output
             end if;
         end if;
     end process;
