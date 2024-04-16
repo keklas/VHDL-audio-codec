@@ -5,8 +5,8 @@ use IEEE.NUMERIC_STD.ALL;
 entity ac_control is
     Port ( clk : in STD_LOGIC;
            enable : in STD_LOGIC; -- Gain enable signal
-           audio_in : in STD_LOGIC;
-           amplified_audio_out : out STD_LOGIC
+           audio_in : in STD_LOGIC_VECTOR(15 downto 0);
+           audio_out : out STD_LOGIC
          );
 end ac_control;
 
@@ -26,7 +26,7 @@ begin
             end if;
             
             if enable = '1' then
-                audio_sample(bit_counter) <= audio_in;
+                audio_sample <= audio_in;
                 
                 if unsigned(audio_sample) >= 2**(16-gain_factor) then
                     amplified_audio_sample <= (others => '1'); -- Maximum value
@@ -34,10 +34,11 @@ begin
                     amplified_audio_sample <= std_logic_vector(shift_left(unsigned(audio_sample), gain_factor)); -- Use shift_left
                 end if;
                 
-                amplified_audio_out <= amplified_audio_sample(bit_counter); -- Send out bit by bit
+                audio_out <= amplified_audio_sample(bit_counter); -- Send out bit by bit
                 bit_counter <= (bit_counter + 1) mod 16; -- Increment the counter
             else
-                amplified_audio_out <= audio_in; -- If enable = 0, pass the input audio directly to output
+                audio_out <= audio_in(bit_counter); -- If enable = 0, pass the input audio directly to output
+                bit_counter <= (bit_counter + 1) mod 16; -- Increment the counter
             end if;
             
             enable_prev <= enable; -- Store the current value of enable for the next clock cycle
