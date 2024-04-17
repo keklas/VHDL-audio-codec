@@ -15,6 +15,8 @@ architecture Behavioral of ac_control_tb is
     signal bit_counter : integer range 0 to 15 := 0; -- Counter for the current bit
     
     constant clk_period : time := 10 ns;
+    constant sample_period : integer := 16; -- Number of clock cycles per audio sample
+    signal sample_counter : integer range 0 to sample_period-1 := 0; -- Counter for the current sample
 
 begin
     uut: entity work.ac_control(Behavioral)
@@ -37,20 +39,27 @@ begin
     begin
         enable <= '0';
         for i in 0 to 65535 loop
-            audio_in <= std_logic_vector(to_unsigned(i, 16));
+            if sample_counter = 0 then
+                audio_in <= std_logic_vector(to_unsigned(i, 16));
+            end if;
             wait for clk_period;
-            assert audio_in(0) = audio_out
+            assert audio_in(bit_counter) = audio_out
                 report "Test failed for input " & integer'image(i)
                 severity error;
+            bit_counter <= (bit_counter + 1) mod 16; -- Increment the counter
+            sample_counter <= (sample_counter + 1) mod sample_period; -- Increment the sample counter
         end loop;
         
         wait for 500 ns;
         
         enable <= '1';
+        bit_counter <= 0; -- Reset the counter
+        sample_counter <= 0; -- Reset the sample counter
         for i in 0 to 65535 loop
-            audio_in <= std_logic_vector(to_unsigned(i, 16));
+            if sample_counter = 0 then
+                audio_in <= std_logic_vector(to_unsigned(i, 16));
+            end if;
             wait for clk_period;
-            -- Calculate the expected amplified output
             if unsigned(audio_in) >= 2**(16-gain_factor) then
                 expected_output <= (others => '1'); -- Maximum value
             else
@@ -60,6 +69,8 @@ begin
             assert audio_out = expected_output(bit_counter)
                 report "Test failed for input " & integer'image(i)
                 severity error;
+            bit_counter <= (bit_counter + 1) mod 16; -- Increment the counter
+            sample_counter <= (sample_counter + 1) mod sample_period; -- Increment the sample counter
         end loop;
         
         wait;
