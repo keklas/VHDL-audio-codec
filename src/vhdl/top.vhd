@@ -46,6 +46,26 @@ architecture Behavioral of top is
             mclk_out    : out std_logic
         );
     end component;
+    
+    component ac_audio is   
+        Port (
+            clk          : in std_logic;
+            ac_recdat    : in std_logic;
+            int_sample   : out std_logic_vector(15 downto 0)
+        );
+    end component;
+    
+    component ac_control
+        Port (
+            clk                 : in STD_LOGIC;
+            enable              : in STD_LOGIC;
+            audio_in            : in STD_LOGIC_VECTOR(15 downto 0);
+            audio_out           : out std_logic
+        );
+    end component;
+    
+    signal int_sample : std_logic_vector(15 downto 0);
+    signal s_mclk : std_logic;
 
 begin
     -- Start SSM2603 in master mode
@@ -53,12 +73,30 @@ begin
         sysclk=>sysclk,
         rst=>btn(0),
         scl=>ac_scl,
-        sda=>ac_sda);    
+        sda=>ac_sda
+    );
+    
     ac_muten <= sw(0);   -- mute switch
     led6_r <= not sw(0); -- red when muted
 
     -- Implementation here
     codecMCLKGen: mclk_gen port map(
         sysclk=>sysclk,
-        mclk_out=>ac_mclk);
+        mclk_out=>s_mclk
+    );
+    
+    codecAudio: ac_audio port map(
+        clk => s_mclk,
+        ac_recdat => ac_recdat,
+        int_sample => int_sample
+    );
+    
+    codecControl: ac_control Port Map (
+        clk => s_mclk,
+        enable => sw(1),
+        audio_in => int_sample,
+        audio_out => ac_pbdat
+    );
+    ac_mclk <= s_mclk;
+    ac_bclk <= s_mclk;
 end Behavioral;
