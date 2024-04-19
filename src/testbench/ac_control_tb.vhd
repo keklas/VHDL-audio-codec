@@ -9,6 +9,7 @@ architecture Behavioral of ac_control_tb is
     constant gain_factor : integer := 1;
     signal clk : std_logic := '0';
     signal enable : std_logic := '0';
+    signal pblrc : std_logic := '0';
     signal audio_in : signed(15 downto 0) := (others => '0');
     signal audio_out : std_logic;
     signal expected_output : std_logic;
@@ -17,6 +18,7 @@ architecture Behavioral of ac_control_tb is
     constant clk_period : time := 10 ns;
     constant sample_period : integer := 16;
     signal sample_counter : integer range 0 to sample_period-1 := 0;
+    signal pblrc_counter : integer range 0 to 250 := 0; -- Counter for pblrc
 
 begin
     uut: entity work.ac_control(Behavioral)
@@ -24,7 +26,8 @@ begin
             clk => clk,
             enable => enable,
             audio_in => audio_in,
-            audio_out => audio_out
+            audio_out => audio_out,
+            pblrc => pblrc
         );
 
     clk_process : process
@@ -33,6 +36,12 @@ begin
         wait for clk_period/2;
         clk <= '1';
         wait for clk_period/2;
+        if pblrc_counter = 250 then
+            pblrc <= not pblrc;
+            pblrc_counter <= 0;
+        else
+            pblrc_counter <= pblrc_counter + 1;
+        end if;
     end process;
 
     stim_proc: process
