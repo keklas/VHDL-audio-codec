@@ -60,14 +60,14 @@ architecture Behavioral of i2c_configurator is
         , R02 & B"1_0111_1001"
         , R03 & B"1_0111_1001"
         , R05 & B"0_0000_0000"
-        , R07 & B"0_0100_1010" -- enable master mode
+        , R07 & B"0_0100_1110" -- enable master mode
         , R08 & B"0_0000_0001"
         , R16 & B"0_0111_1011"
         , R17 & B"0_0000_0000"
         , R18 & B"0_1111_0011"
         , R09 & B"0_0000_0001"
         , R06 & B"0_0010_0000"
-        , R04 & B"0_0001_0100" -- to test bypass, change to 0_0001_1100
+        , R04 & B"0_0001_0101" -- to test bypass, change to 0_0001_1100 was (0_0001_0100)
         , R05 & B"0_0000_0000"
         );
     

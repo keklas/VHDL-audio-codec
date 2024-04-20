@@ -10,8 +10,9 @@ architecture Behavioral of top_tb is
     signal s_btn: std_logic_vector(3 downto 0) := (others => '0');
     signal s_sw: std_logic_vector(3 downto 0) := (others => '0');
     signal s_r_led : std_logic;     
-    signal s_sysclk, s_ac_bclk, s_ac_mclk, s_ac_muten, s_ac_pbdat, s_ac_recdat, s_ac_scl, s_ac_sda, s_ac_reclrc, s_ac_pblrc: std_logic := 'Z';
-    signal reclrc, pblrc, csv_mclk: std_logic := '0';
+    signal s_sysclk, s_ac_mclk, s_ac_muten, s_ac_scl, s_ac_sda : std_logic := 'Z';
+    signal s_ac_reclrc, s_ac_pblrc, s_ac_recdat, s_ac_bclk, s_ac_pbdat: std_logic := '0';
+    signal s_MCLK, s_RECLRC, s_PBLRC, s_RECDAT, s_BCLK: std_logic := '0';
     signal count : INTEGER range 0 to 249 := 0;
     file input_buf : text;   
     
@@ -43,19 +44,17 @@ architecture Behavioral of top_tb is
             wait for 4ns;
         end process;
         
-        -- Generate PBLRC and RECLRC clocks = MCLK / 250
-        reclrcGen: process(s_ac_mclk) begin
-            if rising_edge(s_ac_mclk) then
-                if count = 249 then
-                    reclrc <= NOT reclrc;
-                    pblrc <= NOT pblrc;
-                    count <= 0;
-                else
-                    count <= count + 1;
-                end if;
-            end if;                    
+        -- Imitate PBLRC from RECLRC
+        createPBLRC: process begin
+            wait until rising_edge(s_ac_reclrc);
+            wait for 14.32us;
+            s_ac_pblrc <= '1';
+            wait until falling_edge(s_ac_reclrc);
+            wait for 14.32us;
+            s_ac_pblrc <= '0';            
+
         end process;
-        
+                
         -- Simulate mute switch
         testMute: process begin
             s_sw(0) <= '0';
@@ -74,20 +73,35 @@ architecture Behavioral of top_tb is
         
         getAudio: process
             variable inLine : line;
-            variable RECDAT, MCLK : std_logic := '0';
+            variable SDA, SCL, RECDAT, Cha, BCLK, RECLRC, MCLK, PBLRC : std_logic := '0';
             variable colTmp : character;
         begin
             file_open(input_buf, "testdata.csv",  read_mode);
             readline(input_buf, inLine);
             while not endfile(input_buf) loop
-                readline(input_buf, inLine);
-                read(inLine, RECDAT);
-                read(inLine, colTmp);
-                read(inLine, MCLK);
-                read(inLine, colTmp);
+            readline(input_buf, inLine);
+            read(inLine, SDA);
+            read(inLine, colTmp);
+            read(inLine, SCL);
+            read(inLine, colTmp);
+            read(inLine, RECDAT);
+            read(inLine, colTmp);
+            read(inLine, Cha);
+            read(inLine, colTmp);
+            read(inLine, BCLK);
+            read(inLine, colTmp);
+            read(inLine, RECLRC);
+            read(inLine, colTmp);
+            read(inLine, MCLK);
+            read(inLine, colTmp);
+            read(inLine, PBLRC);
+            
 
-                s_ac_recdat <= RECDAT;
-                csv_mclk <= MCLK;
+            s_ac_recdat <= RECDAT;
+            s_ac_bclk <= BCLK;
+            s_ac_reclrc <= RECLRC;
+            s_MCLK <= MCLK;
+            s_PBLRC <= PBLRC;
                 wait until rising_edge(s_ac_mclk); 
             end loop;
             file_close(input_buf);

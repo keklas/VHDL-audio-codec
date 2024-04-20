@@ -1,5 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 entity top is
     Port (
@@ -8,15 +9,15 @@ entity top is
         led6_r      : out std_logic;
         
         sysclk      : in std_logic;
-        ac_bclk     : out std_logic;
+        ac_bclk     : in std_logic;
         ac_mclk     : out std_logic;
         ac_muten    : out std_logic;
         
         -- HANDLE THESE VARIABLES --
         ac_pbdat    : out std_logic; -- Playback data
-        ac_pblrc    : out std_logic; -- Playback channel clock, LEFT (0) or RIGHT (1)
+        ac_pblrc    : in std_logic;  -- Playback channel clock, LEFT (0) or RIGHT (1)
         ac_recdat   : in std_logic;  -- Record data, unpack audio signals from this
-        ac_reclrc   : out std_logic; -- Record channel clock
+        ac_reclrc   : in std_logic;  -- Record channel clock
         -- HANDLE THESE VARIABLES --
         -- Create a signal that's 16 bits long
         -- Collect data into the signal
@@ -50,21 +51,23 @@ architecture Behavioral of top is
     component ac_audio is   
         Port (
             clk          : in std_logic;
+            channel_clk  : in std_logic;
             ac_recdat    : in std_logic;
-            int_sample   : out std_logic_vector(15 downto 0)
+            int_sample   : out signed(29 downto 0)
         );
     end component;
     
     component ac_control
         Port (
-            clk                 : in STD_LOGIC;
-            enable              : in STD_LOGIC;
-            audio_in            : in STD_LOGIC_VECTOR(15 downto 0);
-            audio_out           : out std_logic
+            clk                 : in std_logic;
+            channel_clk         : in std_logic;
+            enable              : in std_logic;
+            audio_in            : in signed(29 downto 0);
+            audio_out           : out std_logic  
         );
     end component;
     
-    signal int_sample : std_logic_vector(15 downto 0);
+    signal int_sample : signed(29 downto 0);
     signal s_mclk : std_logic;
 
 begin
@@ -86,17 +89,18 @@ begin
     );
     
     codecAudio: ac_audio port map(
-        clk => s_mclk,
+        clk => ac_bclk,
+        channel_clk => ac_reclrc,
         ac_recdat => ac_recdat,
         int_sample => int_sample
     );
     
     codecControl: ac_control Port Map (
-        clk => s_mclk,
+        clk => ac_bclk,
+        channel_clk => ac_pblrc,
         enable => sw(1),
         audio_in => int_sample,
         audio_out => ac_pbdat
     );
     ac_mclk <= s_mclk;
-    ac_bclk <= s_mclk;
 end Behavioral;

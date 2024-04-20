@@ -10,13 +10,13 @@ architecture Behavioral of ac_control_tb is
     signal clk : std_logic := '0';
     signal enable : std_logic := '0';
     signal pblrc : std_logic := '0';
-    signal audio_in : signed(15 downto 0) := (others => '0');
+    signal audio_in : signed(29 downto 0) := (others => '0');
     signal audio_out : std_logic;
     signal expected_output : std_logic;
-    signal bit_counter : integer range 0 to 15 := 15;
+    signal bit_counter : integer range 0 to 29 := 29;
     
     constant clk_period : time := 10 ns;
-    constant sample_period : integer := 16;
+    constant sample_period : integer := 29;
     signal sample_counter : integer range 0 to sample_period-1 := 0;
     signal pblrc_counter : integer range 0 to 250 := 0; -- Counter for pblrc
 
@@ -49,14 +49,14 @@ begin
         enable <= '0';
         for i in -32768 to 32767 loop
             if sample_counter = 0 then
-                audio_in <= to_signed(i, 16);
+                audio_in <= to_signed(i, 30);
             end if;
             wait for clk_period;
             assert audio_in(bit_counter) = audio_out
                 report "Test failed for input " & integer'image(i)
                 severity error;
             if bit_counter = 0 then
-                bit_counter <= 15;
+                bit_counter <= 29;
             else
                 bit_counter <= bit_counter - 1;
             end if;
@@ -66,11 +66,11 @@ begin
         wait for 500 ns;
         
         enable <= '1';
-        bit_counter <= 15;
+        bit_counter <= 29;
         sample_counter <= 0;
         for i in -32768 to 32767 loop
             if sample_counter = 0 then
-                audio_in <= to_signed(i, 16);
+                audio_in <= to_signed(i, 30);
             end if;
             wait for clk_period;
             if (audio_in >= 0 and audio_in * gain_factor < audio_in) or (audio_in < 0 and audio_in * gain_factor > audio_in) then
@@ -87,13 +87,12 @@ begin
                 report "Test failed for input " & integer'image(i)
                 severity error;
             if bit_counter = 0 then
-                bit_counter <= 15;
+                bit_counter <= 29;
             else
                 bit_counter <= bit_counter - 1;
             end if;
             sample_counter <= (sample_counter + 1) mod sample_period;
         end loop;
-        
         wait;
     end process;
 end Behavioral;
